@@ -1,15 +1,31 @@
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Dashboard</title>
-        <link rel="stylesheet" href="css/index.css">
-    </head>
-    <body>
-        <div id="navbar">
-            <h1 id="title">Dashboard</h1>
-            <div id="btn_logout" type="button" onclick="logout()">Logout</div>
-            <span id="full_name"></span>
-        </div>
-    </body>
-    <script src="js/index.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/index.css">
+
+    <script src="js/core.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/animated.js"></script>
+
+</head>
+
+<body>
+    <div id="navbar">
+        <h1 id="title">Dashboard</h1>
+        <div id="btn_logout" type="button" onclick="logout()">Logout</div>
+        <span id="full_name"></span>
+    </div>
+    <div id="content">
+
+
+        <div id="chart1"></div>
+        <div id="chart2"></div>
+    </div>
+
+    <button onclick="query()">Load data</button>
+</body>
+<script src="js/index.js"></script>
+
 </html>

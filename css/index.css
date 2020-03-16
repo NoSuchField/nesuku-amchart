@@ -1,22 +1,22 @@
-*{
+* {
     margin: 0;
     padding: 0;
 }
 
-#navbar{
+#navbar {
     width: 100%;
     height: 50px;
     background-color: #578EBE
 }
 
-#title{
+#title {
     float: left;
     color: white;
     line-height: 50px;
     margin-left: 10px;
 }
 
-#btn_logout{
+#btn_logout {
     float: right;
     color: white;
     line-height: 30px;
@@ -27,8 +27,31 @@
     padding: 0 5px;
 }
 
-#full_name{
+#full_name {
     float: right;
     line-height: 50px;
     color: white;
+}
+
+#content {
+    width: 100%;
+    height: 600px;
+    background-color: darkgray;
+}
+
+#chart1,
+#chart2 {
+    float: left;
+    width: 50%;
+    margin: 0;
+    padding: 0;
+    height: 600px;
+}
+
+#chart1 {
+    background-color: darkgreen;
+}
+
+#chart2 {
+    background-color: firebrick;
 }
