@@ -36,22 +36,22 @@
 #content {
     width: 100%;
     height: 900px;
-    background-color: darkgray;
+    /*background-color: darkgray;*/
 }
 
 #chart1,
 #chart2 {
     float: left;
-    width: 50%;
+    width: calc(50% - 2.5px);
     margin: 0;
     padding: 0;
     height: 900px;
+
+    font-size: 13px;
+
+    background-color: rgba(76, 119, 175, 0.3);
 }
 
 #chart1 {
-    background-color: darkgreen;
-}
-
-#chart2 {
-    background-color: firebrick;
+    border-right: 5px solid rgb(3, 13, 104);
 }

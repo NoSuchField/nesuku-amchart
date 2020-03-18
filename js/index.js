@@ -15,11 +15,11 @@ document.getElementById("full_name").innerHTML = first_name + " " + last_name;
 
 function logout() {
     var request = new XMLHttpRequest();
-    request.open("GET", "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/users/logout", false);
+    request.open("GET", "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/users/logout", true);
     request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     request.send();
 
-    console.log(JSON.parse(request.responseText));
+    // console.log(JSON.parse(request.responseText));
     localStorage.clear();
     window.location.href = "login.html"
 
@@ -29,13 +29,26 @@ function query() {
     // 调用接口取数据
     var url = "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/training/records/list";
     var request = new XMLHttpRequest();
-    request.open("POST", url, false)
+
+    request.open("POST", url, false);
     request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     request.setRequestHeader("token", token);
     request.send("{\"pagingTool\":{\"currentPage\":1,\"pageSize\":102400},\"queryOrderBies\":[{\"columnName\":\"class.name\",\"orderType\":\"asc\"}]}");
+    
     return JSON.parse(request.responseText);
 }
 
+// Get attendance code information
+function AH_code() {
+
+    var url = "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/codes/childrenOf?codes=_TRAINING_AH";
+    var request = new XMLHttpRequest();
+    request.open("GET",url,false);
+    request.setRequestHeader("token", token);
+    request.send();
+
+    return JSON.parse(request.responseText);
+}
 
 // chart
 
@@ -43,6 +56,7 @@ am4core.ready(function() {
     am4core.useTheme(am4themes_animated);
 
     var pieChart = am4core.create("chart1", am4charts.PieChart);
+    pieChart.radius = am4core.percent(65);
     pieChart.innerRadius = am4core.percent(30);
 
 
@@ -66,6 +80,8 @@ am4core.ready(function() {
     // 图例
     // Add a legend
     pieChart.legend = new am4charts.Legend();
+    pieChart.legend.valueLabels.template.align = "right";
+    pieChart.legend.valueLabels.template.textAlign = "end";  
 
     var resp = query();
 
@@ -106,18 +122,141 @@ am4core.ready(function() {
                 "count": org_list_filterd.length
             };
 
-            if (data.length < 10) {
-                data.push(d);
-            } else {
-                break;
-            }
+            data.push(d);
 
         }
     }
 
+    data.sort((a,b) => (a.count<b.count) ? 1 : -1);
+    data = data.slice(0,10);
+
     pieChart.data = data;
 
+/////////////////////////        XY Chart         ////////////////////////////////////
+    var xyChart = am4core.create("chart2", am4charts.XYChart);
 
-    // var xyChart = am4core.create("chart2", am4charts.XYChart);
+    xyChart.colors.step = 2;
+
+    // Legend position
+    xyChart.legend = new am4charts.Legend();
+    xyChart.legend.position = "right";
+    xyChart.legend.valign = "top";
+    xyChart.legend.labels.template.maxWidth = 150;
+
+    xyChart.cursor = new am4charts.XYCursor();
+    xyChart.cursor.lineY.disabled = true;
+    xyChart.cursor.lineX.disabled = true;
+
+    // title
+    var title = xyChart.titles.create();
+    title.text = "Attendance & Qualification Percentage (by Lesson)";
+    title.fontSize = 20;
+    title.marginBottom = 15;
+
+    // Define x-axis
+    var xAxis = xyChart.xAxes.push(new am4charts.CategoryAxis());
+    xAxis.dataFields.category = 'Name';
+    //xAxis.title.text = "Lesson Name";
+    xAxis.renderer.labels.template.rotation = 45;
+    xAxis.renderer.labels.template.verticalCenter = "middle";
+    xAxis.renderer.labels.template.horizontalCenter = "left";
+    xAxis.renderer.cellStartLocation = 0.1;
+    xAxis.renderer.cellEndLocation = 0.9;
+    xAxis.renderer.grid.template.location = 0;
+    xAxis.renderer.minGridDistance = 30;
+    xAxis.tooltip.disabled = true;
+
+    /*xAxis.renderer.labels.template.adapter.add("dy", function(dy, target) {
+        if (target.dataItem && target.dataItem.index & 2 == 2) {
+          return dy + 15;
+        }
+        return dy;
+      });*/
+
+    // Define y-axis
+    var yAxis = xyChart.yAxes.push(new am4charts.ValueAxis());
+    yAxis.min = 0;
+    yAxis.max = 100;
+    yAxis.title.text = "Percentage";
+
+    // Create series function
+    function createSeries(value, name) {
+        var series = xyChart.series.push(new am4charts.ColumnSeries());
+        series.dataFields.valueY = value;
+        series.dataFields.categoryX = 'Name';
+        series.name = name;
+
+        series.tooltipText = "{categoryX}: [bold]{valueY}%[/]";
+        series.tooltip.pointerOrientation = "vertical";
+
+        return series;
+    }
+
+    // Get code information
+    var AttCode = AH_code();
+    AttCode = AttCode.DATA;
+    AttCode = AttCode[0].childCodes;
+
+    NQual = AttCode[4].code;
+    Qual = AttCode[5].code;
+    //console.log(AttCode);
+
+    var classInfo = [];
+    for (var i = 0; i < array.length; i++){
+
+        // store training class info
+        lessonInfo = array[i].trainingClass.lesson;
+        // store class result into training class object
+        lessonInfo.result = array[i].result;
+        classInfo.push(lessonInfo);
+    }
+    //console.log(classInfo);
+
+    var idList = [];
+    var xyData = [];
+    for (var i = 0; i < classInfo.length; i++) {
+
+        var classID = classInfo[i].id;
+        var className = classInfo[i].name;
+
+        // if no this classID, count 
+        if (idList.indexOf(classID) == -1) {
+        
+            idList.push(classID)
+
+            // extract total number of people taking this lesson
+            var total = classInfo.filter(function(obj){
+
+                return obj.id == classID 
+            });
+
+            // extract number of attendance
+            var attend = classInfo.filter(function(obj){
+
+                return (obj.id == classID && obj.result != NQual)
+            });
+            
+            // extract number of Qualified
+            var qualified = classInfo.filter(function(obj){
+
+                return (obj.id == classID && obj.result == Qual)
+            });
+
+            attRes = Math.round((attend.length / total.length) * 100);
+            qualRes = Math.round((qualified.length / total.length) * 100);
+            var d = {"Name":className, "Attended": attRes, "Qualified": qualRes};
+
+            xyData.push(d);
+        }
+
+    }
+
+    console.log(xyData);
+
+    xyData.sort((a,b) => (a.Attended<b.Attended) ? 1 : -1);
+    xyChart.data = xyData;
+
+    createSeries("Attended","Attendance Percentage");
+    createSeries("Qualified","Qualification Percentage");
 
 });

@@ -1,16 +1,37 @@
 <html>
     <head>
+
         <meta charset="UTF-8">
         <title>Login to Amchart</title>
         <script src="js/login.js"></script>
+        <link rel="stylesheet" href="css/login.css"/>
+
     </head>
 
     <body>
-        <div>
-            <input id="username" type="text" value="admin" />
-            <input id="password" type="password" value="test" />
+        <div id="top"></div>
 
-            <button onclick="login()">Login</button>
+        <div id="content">
+            <img src="img/qcs-logo-lg.png" alt='' class='center'>
+
+            <div id="header">
+
+                <div id="uname">
+                    <p><b>Username</b></p>
+                    <input id="username" type="text" value="admin"/>
+                </div>
+
+                <div id="pwd">
+                    <p><b>Password</b></p>
+                    <input id="password" type="password" value="test"/>
+                </div>
+                
+                <button onclick="login()">Log In</button>
+            </div>
         </div>
+
+        <div id="btm"></div>
+
     </body>
+
 </html>
