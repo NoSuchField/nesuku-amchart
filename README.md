@@ -27,3 +27,7 @@ Y轴： 课程出席率/合格率
 
 GET http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/codes/childrenOf?codes=_TRAINING_AH
 
+### 效果图
+
+![Peek 2020-03-19 21-39.gif](https://i.loli.net/2020/03/19/ex5RrMSsTqCouKd.gif)
+

@@ -18,24 +18,30 @@ function logout() {
     request.open("GET", "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/users/logout", true);
     request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     request.send();
-
-    // console.log(JSON.parse(request.responseText));
     localStorage.clear();
     window.location.href = "login.html"
-
 }
 
 function query() {
-    // 调用接口取数据
-    var url = "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/training/records/list";
-    var request = new XMLHttpRequest();
+    return new Promise(function(resolve) {
+        // 调用接口取数据
+        var url = "http://qcs-simcere-dev.usequantum.com.cn/facts_backend-2.6/rest/training/records/list";
+        var request = new XMLHttpRequest();
 
-    request.open("POST", url, false);
-    request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    request.setRequestHeader("token", token);
-    request.send("{\"pagingTool\":{\"currentPage\":1,\"pageSize\":102400},\"queryOrderBies\":[{\"columnName\":\"class.name\",\"orderType\":\"asc\"}]}");
-    
-    return JSON.parse(request.responseText);
+        request.open("POST", url, true);
+        request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        request.setRequestHeader("token", token);
+        request.send("{\"pagingTool\":{\"currentPage\":1,\"pageSize\":102400},\"queryOrderBies\":[{\"columnName\":\"class.name\",\"orderType\":\"asc\"}]}");
+        
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                if (request.status == 200) {
+                    r = JSON.parse(request.responseText);
+                    resolve(r);
+                }
+            }
+        }
+    });
 }
 
 // Get attendance code information
@@ -83,180 +89,193 @@ am4core.ready(function() {
     pieChart.legend.valueLabels.template.align = "right";
     pieChart.legend.valueLabels.template.textAlign = "end";  
 
-    var resp = query();
+    query().then(function(data){
+        // PieChart
+        var resp = data;
+        // 数据部分
+        // {"name": "xxxx", "count": 12}
+        var data = [];
+        var org_list = [];
 
-    // 数据部分
-    // {"name": "xxxx", "count": 12}
-    var data = [];
-    var org_list = [];
+        // 遍历 Array
+        var array = resp.DATA;
 
-    // 遍历 Array
-    var array = resp.DATA;
-
-    for (var index = 0; index < array.length; index++) {
-        const element = array[index];
-        org_list = org_list.concat(element.employee.orgs);
-    }
-
-    // 去重
-
-    var remove_dup_list = [];
-
-    for (var index = 0; index < org_list.length; index++) {
-        const element = org_list[index];
-
-        // 统计组织架构出现的次数
-        var org_id = element.id;
-
-        if (remove_dup_list.indexOf(org_id) == -1) {
-            remove_dup_list.push(org_id);
-            // 名字
-            var name = element.full_name;
-
-            var org_list_filterd = org_list.filter(function(o) {
-                return o.id == org_id;
-            });
-
-            var d = {
-                "name": name,
-                "count": org_list_filterd.length
-            };
-
-            data.push(d);
-
+        for (var index = 0; index < array.length; index++) {
+            const element = array[index];
+            org_list = org_list.concat(element.employee.orgs);
         }
-    }
 
-    data.sort((a,b) => (a.count<b.count) ? 1 : -1);
-    data = data.slice(0,10);
+        // 去重
 
-    pieChart.data = data;
+        var remove_dup_list = [];
 
-/////////////////////////        XY Chart         ////////////////////////////////////
-    var xyChart = am4core.create("chart2", am4charts.XYChart);
+        for (var index = 0; index < org_list.length; index++) {
+            const element = org_list[index];
 
-    xyChart.colors.step = 2;
+            // 统计组织架构出现的次数
+            var org_id = element.id;
 
-    // Legend position
-    xyChart.legend = new am4charts.Legend();
-    xyChart.legend.position = "right";
-    xyChart.legend.valign = "top";
-    xyChart.legend.labels.template.maxWidth = 150;
+            if (remove_dup_list.indexOf(org_id) == -1) {
+                remove_dup_list.push(org_id);
+                // 名字
+                var name = element.full_name;
 
-    xyChart.cursor = new am4charts.XYCursor();
-    xyChart.cursor.lineY.disabled = true;
-    xyChart.cursor.lineX.disabled = true;
+                var org_list_filterd = org_list.filter(function(o) {
+                    return o.id == org_id;
+                });
 
-    // title
-    var title = xyChart.titles.create();
-    title.text = "Attendance & Qualification Percentage (by Lesson)";
-    title.fontSize = 20;
-    title.marginBottom = 15;
+                var d = {
+                    "name": name,
+                    "count": org_list_filterd.length
+                };
 
-    // Define x-axis
-    var xAxis = xyChart.xAxes.push(new am4charts.CategoryAxis());
-    xAxis.dataFields.category = 'Name';
-    //xAxis.title.text = "Lesson Name";
-    xAxis.renderer.labels.template.rotation = 45;
-    xAxis.renderer.labels.template.verticalCenter = "middle";
-    xAxis.renderer.labels.template.horizontalCenter = "left";
-    xAxis.renderer.cellStartLocation = 0.1;
-    xAxis.renderer.cellEndLocation = 0.9;
-    xAxis.renderer.grid.template.location = 0;
-    xAxis.renderer.minGridDistance = 30;
-    xAxis.tooltip.disabled = true;
+                data.push(d);
 
-    /*xAxis.renderer.labels.template.adapter.add("dy", function(dy, target) {
-        if (target.dataItem && target.dataItem.index & 2 == 2) {
-          return dy + 15;
+            }
         }
-        return dy;
-      });*/
 
-    // Define y-axis
-    var yAxis = xyChart.yAxes.push(new am4charts.ValueAxis());
-    yAxis.min = 0;
-    yAxis.max = 100;
-    yAxis.title.text = "Percentage";
+        data.sort((a,b) => (a.count<b.count) ? 1 : -1);
+        data = data.slice(0,10);
 
-    // Create series function
-    function createSeries(value, name) {
-        var series = xyChart.series.push(new am4charts.ColumnSeries());
-        series.dataFields.valueY = value;
-        series.dataFields.categoryX = 'Name';
-        series.name = name;
+        // title
+        var title = pieChart.titles.create();
+        title.text = "Lesson Attendance Distribution (by Organization)";
+        title.fontSize = 20;
+        title.marginTop = 15;
 
-        series.tooltipText = "{categoryX}: [bold]{valueY}%[/]";
-        series.tooltip.pointerOrientation = "vertical";
 
-        return series;
-    }
+        pieChart.data = data;
 
-    // Get code information
-    var AttCode = AH_code();
-    AttCode = AttCode.DATA;
-    AttCode = AttCode[0].childCodes;
 
-    NQual = AttCode[4].code;
-    Qual = AttCode[5].code;
-    //console.log(AttCode);
 
-    var classInfo = [];
-    for (var i = 0; i < array.length; i++){
+        /////////////////////////        XY Chart         ////////////////////////////////////
+        var xyChart = am4core.create("chart2", am4charts.XYChart);
 
-        // store training class info
-        lessonInfo = array[i].trainingClass.lesson;
-        // store class result into training class object
-        lessonInfo.result = array[i].result;
-        classInfo.push(lessonInfo);
-    }
-    //console.log(classInfo);
+        xyChart.colors.step = 2;
 
-    var idList = [];
-    var xyData = [];
-    for (var i = 0; i < classInfo.length; i++) {
+        // Legend position
+        xyChart.legend = new am4charts.Legend();
+        xyChart.legend.position = "right";
+        xyChart.legend.valign = "top";
 
-        var classID = classInfo[i].id;
-        var className = classInfo[i].name;
+        xyChart.legend.labels.template.maxWidth = 150;
 
-        // if no this classID, count 
-        if (idList.indexOf(classID) == -1) {
-        
-            idList.push(classID)
+        xyChart.cursor = new am4charts.XYCursor();
+        xyChart.cursor.lineY.disabled = true;
+        xyChart.cursor.lineX.disabled = true;
 
-            // extract total number of people taking this lesson
-            var total = classInfo.filter(function(obj){
+        // title
+        var title = xyChart.titles.create();
+        title.text = "Attendance & Qualification Percentage (by Lesson)";
+        title.fontSize = 20;
+        title.marginBottom = 15;
 
-                return obj.id == classID 
-            });
+        // Define x-axis
+        var xAxis = xyChart.xAxes.push(new am4charts.CategoryAxis());
+        xAxis.dataFields.category = 'Name';
+        //xAxis.title.text = "Lesson Name";
+        xAxis.renderer.labels.template.rotation = 45;
+        xAxis.renderer.labels.template.verticalCenter = "middle";
+        xAxis.renderer.labels.template.horizontalCenter = "left";
+        xAxis.renderer.cellStartLocation = 0.1;
+        xAxis.renderer.cellEndLocation = 0.9;
+        xAxis.renderer.grid.template.location = 0;
+        xAxis.renderer.minGridDistance = 30;
+        xAxis.tooltip.disabled = true;
 
-            // extract number of attendance
-            var attend = classInfo.filter(function(obj){
+        /*xAxis.renderer.labels.template.adapter.add("dy", function(dy, target) {
+            if (target.dataItem && target.dataItem.index & 2 == 2) {
+            return dy + 15;
+            }
+            return dy;
+        });*/
 
-                return (obj.id == classID && obj.result != NQual)
-            });
+        // Define y-axis
+        var yAxis = xyChart.yAxes.push(new am4charts.ValueAxis());
+        yAxis.min = 0;
+        yAxis.max = 100;
+        yAxis.title.text = "Percentage";
+
+        // Create series function
+        function createSeries(value, name) {
+            var series = xyChart.series.push(new am4charts.ColumnSeries());
+            series.dataFields.valueY = value;
+            series.dataFields.categoryX = 'Name';
+            series.name = name;
+
+            series.tooltipText = "{categoryX}: [bold]{valueY}%[/]";
+            series.tooltip.pointerOrientation = "vertical";
+
+            return series;
+        }
+
+        // Get code information
+        var AttCode = AH_code();
+        AttCode = AttCode.DATA;
+        AttCode = AttCode[0].childCodes;
+
+        NQual = AttCode[4].code;
+        Qual = AttCode[5].code;
+        //console.log(AttCode);
+
+        var classInfo = [];
+        for (var i = 0; i < array.length; i++){
+
+            // store training class info
+            lessonInfo = array[i].trainingClass.lesson;
+            // store class result into training class object
+            lessonInfo.result = array[i].result;
+            classInfo.push(lessonInfo);
+        }
+        //console.log(classInfo);
+
+        var idList = [];
+        var xyData = [];
+        for (var i = 0; i < classInfo.length; i++) {
+
+            var classID = classInfo[i].id;
+            var className = classInfo[i].name;
+
+            // if no this classID, count 
+            if (idList.indexOf(classID) == -1) {
             
-            // extract number of Qualified
-            var qualified = classInfo.filter(function(obj){
+                idList.push(classID)
 
-                return (obj.id == classID && obj.result == Qual)
-            });
+                // extract total number of people taking this lesson
+                var total = classInfo.filter(function(obj){
 
-            attRes = Math.round((attend.length / total.length) * 100);
-            qualRes = Math.round((qualified.length / total.length) * 100);
-            var d = {"Name":className, "Attended": attRes, "Qualified": qualRes};
+                    return obj.id == classID 
+                });
 
-            xyData.push(d);
+                // extract number of attendance
+                var attend = classInfo.filter(function(obj){
+
+                    return (obj.id == classID && obj.result != NQual)
+                });
+                
+                // extract number of Qualified
+                var qualified = classInfo.filter(function(obj){
+
+                    return (obj.id == classID && obj.result == Qual)
+                });
+
+                attRes = Math.round((attend.length / total.length) * 100);
+                qualRes = Math.round((qualified.length / total.length) * 100);
+                var d = {"Name":className, "Attended": attRes, "Qualified": qualRes};
+
+                xyData.push(d);
+            }
+
         }
 
-    }
+        
 
-    console.log(xyData);
+        xyData.sort((a,b) => (a.Attended<b.Attended) ? 1 : -1);
+        xyChart.data = xyData;
 
-    xyData.sort((a,b) => (a.Attended<b.Attended) ? 1 : -1);
-    xyChart.data = xyData;
+        createSeries("Attended","Attendance Rate");
+        createSeries("Qualified","Qualification Rate");
 
-    createSeries("Attended","Attendance Percentage");
-    createSeries("Qualified","Qualification Percentage");
-
+        document.getElementById("mask_left").style.display = "none";
+    });
 });

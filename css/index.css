@@ -6,7 +6,10 @@
 #navbar {
     width: 100%;
     height: 50px;
-    background-color: #578EBE
+    background-color: #578EBE;
+    position: fixed;
+    top: 0;
+    z-index: 999;
 }
 
 #title {
@@ -27,6 +30,17 @@
     padding: 0 5px;
 }
 
+#btn_logout:hover {
+    float: right;
+    color: white;
+    line-height: 30px;
+    margin: 10px 15px;
+    background-color: rgb(119, 121, 219);
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 0 5px;
+}
+
 #full_name {
     float: right;
     line-height: 50px;
@@ -36,22 +50,26 @@
 #content {
     width: 100%;
     height: 900px;
+    margin-top: 50px;
     /*background-color: darkgray;*/
 }
 
-#chart1,
-#chart2 {
+#chart1, #chart2 {
     float: left;
     width: calc(50% - 2.5px);
     margin: 0;
     padding: 0;
     height: 900px;
-
     font-size: 13px;
-
     background-color: rgba(76, 119, 175, 0.3);
 }
 
 #chart1 {
     border-right: 5px solid rgb(3, 13, 104);
+}
+
+#mask_left{
+    top: 0 !important;
+    position: fixed !important;
+    width: 100% !important;
 }
